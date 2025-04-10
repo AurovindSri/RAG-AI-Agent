@@ -12,6 +12,41 @@ from typing import List
 import uvicorn
 from datetime import datetime, timezone
 from langchain_core.tools import Tool
+import boto3
+import json
+import base64
+
+# Read API keys from AWS Secrets Manager
+def get_secret():
+    secret_name = "llm-api-key"
+    region_name = "us-east-2"
+
+    # Create a Secrets Manager client
+    client = boto3.client(
+    service_name ='secretsmanager',
+    aws_access_key_id='',
+    aws_secret_access_key='',
+    region_name=region_name
+)
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except Exception as e:
+        print(f"Error retrieving secret: {e}")
+        return None
+
+    # Decrypts secret using the associated KMS key
+    if 'SecretString' in get_secret_value_response:
+        secret = get_secret_value_response['SecretString']
+        return json.loads(secret)
+    else:
+        # Handle binary secret data
+        decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+        return json.loads(decoded_binary_secret)
+
+secret = get_secret()
 
 app = FastAPI()
 
@@ -21,14 +56,14 @@ db = mongo_client["chatHistory"]
 chat_collection = db["chat"]
 
 # Initialize the AI Model
-"""model_1 = AzureChatOpenAI(
-    azure_endpoint='',
-    azure_deployment="",
-    api_key='',
-    api_version="",
-    model_version="",
-    streaming=,
-)"""
+model_1 = AzureChatOpenAI(
+    azure_endpoint=secret['azure_endpoint'],
+    azure_deployment=secret['azure_deployment'],
+    api_key=secret['api_key'],
+    api_version="2024-02-15-preview",
+    model_version="1",
+    streaming=True,
+)
 
 @tool(parse_docstring=True)
 def add(a: int, b: int) -> int:
