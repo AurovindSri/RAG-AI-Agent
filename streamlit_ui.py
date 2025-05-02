@@ -12,9 +12,17 @@ def send_message(user_id, message):
     """Send a message to the chatbot."""
     response = requests.post(CHAT_API_URL, json={"user_id": user_id, "message": message})
     if response.status_code == 200:
-        return response.json()["response"]
+        try:
+            return response.json()["response"]
+        except (ValueError, KeyError):
+            st.error("Invalid response format from the server.")
+            return None
     else:
-        st.error(f"Error: {response.json().get('detail', 'Failed to send message')}")
+        try:
+            error_detail = response.json().get('detail', 'Failed to send message')
+        except ValueError:
+            error_detail = f"Non-JSON response received. Status code: {response.status_code}"
+        st.error(f"Error: {error_detail}")
         return None
 
 def get_chat_history(user_id):

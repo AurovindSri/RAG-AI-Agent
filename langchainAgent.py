@@ -15,39 +15,69 @@ from langchain_core.tools import Tool
 import boto3
 import json
 import base64
+from fastapi.responses import JSONResponse
+import traceback
+
+# Vector store setup
+from langchain_community.vectorstores import FAISS
+#from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+
+
+embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vector_store = FAISS.load_local(
+    "vector_index",
+    embeddings=embedding_model,
+    allow_dangerous_deserialization=True  
+)
+
+def retrieve_db(query: str, threshold: float = 0.0):    #Added similarity threshold to avoid irrelevant context for prompts if not needed
+    """Retrieve information related to a query from vector Database."""
+    if not vector_store:
+        return ""
+    
+    # Get documents with similarity scores
+    #results = vector_store.similarity_search_with_score(query, k=2)                    #Good enough but might give redundant context
+    results = vector_store.max_marginal_relevance_search(query, k=5, lambda_mult=threshold)   #Avoids giving redundant context & gives more context
+    
+    # Filter based on threshold
+    filtered_docs = results
+    
+    # [
+    #     doc for doc, score in results if score >= threshold
+    # ]
+    
+    # if not filtered_docs:
+        # return ""  # No relevant context
+
+    serialized = "\n\n".join(
+        f"Source: {doc.metadata}\nContent: {doc.page_content}"
+        for doc in results
+    )
+    return serialized
 
 # Read API keys from AWS Secrets Manager
 def get_secret():
     secret_name = "llm-api-key"
     region_name = "us-east-2"
-
-    # Create a Secrets Manager client
     client = boto3.client(
-    service_name ='secretsmanager',
-    aws_access_key_id='',
-    aws_secret_access_key='',
-    region_name=region_name
-)
-
+        service_name='secretsmanager',
+        aws_access_key_id='',
+        aws_secret_access_key='',
+        region_name=region_name
+    )
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     except Exception as e:
         print(f"Error retrieving secret: {e}")
         return None
-
-    # Decrypts secret using the associated KMS key
     if 'SecretString' in get_secret_value_response:
-        secret = get_secret_value_response['SecretString']
-        return json.loads(secret)
+        return json.loads(get_secret_value_response['SecretString'])
     else:
-        # Handle binary secret data
         decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
         return json.loads(decoded_binary_secret)
 
 secret = get_secret()
-
 app = FastAPI()
 
 # MongoDB setup
@@ -55,7 +85,7 @@ mongo_client = MongoClient('mongodb://localhost:27017/')
 db = mongo_client["chatHistory"]
 chat_collection = db["chat"]
 
-# Initialize the AI Model
+# AI Model
 model_1 = AzureChatOpenAI(
     azure_endpoint=secret['azure_endpoint'],
     azure_deployment=secret['azure_deployment'],
@@ -82,93 +112,88 @@ SYSTEM_MESSAGE_CONTENT = (
     "Your are an AI agent responsible for answers user's question regarding legal statues."
 )
 
-# Define request and response models
 class UserMessage(BaseModel):
     user_id: str
     message: str
+    thread_id: str = None
 
 class AIResponse(BaseModel):
     response: str
 
-# Helper Functions for MongoDB
 def initialize_chat_history(user_id: str):
-    """Initialize chat history for a user if it doesn't exist."""
     if not chat_collection.find_one({"user_id": user_id}):
-        system_message = message_to_dict(SystemMessage(content=SYSTEM_MESSAGE_CONTENT))#.to_dict()
-        timestamp = datetime.now(timezone.utc)
-        system_message["timestamp"] = timestamp
+        system_message = message_to_dict(SystemMessage(content=SYSTEM_MESSAGE_CONTENT))
+        system_message["timestamp"] = datetime.now(timezone.utc)
         chat_collection.insert_one({"user_id": user_id, "messages": [system_message]})
 
 def add_message_to_history(user_id: str, message: dict):
-    """Add a message to a user's chat history."""
-    timestamp = datetime.now(timezone.utc)
-    message["timestamp"] = timestamp
-    
+    message["timestamp"] = datetime.now(timezone.utc)
     chat_collection.update_one(
         {"user_id": user_id},
         {"$push": {"messages": message}}
     )
 
 def get_chat_history(user_id: str) -> List[dict]:
-    """Retrieve the chat history for a user."""
     user_chat = chat_collection.find_one({"user_id": user_id})
     if not user_chat:
         return []
     else:
         for message in user_chat['messages']:
-            if message['type'] == 'ai' and len(message['data']['tool_calls'])!=0:
+            if message['type'] == 'ai' and len(message['data'].get('tool_calls', [])) != 0:
                 for tool_call in message['data']['tool_calls']:
-                    selected_tool = {"add":add}[tool_call["name"].lower()]
-                    tool_output = selected_tool.run(tool_call["args"]['__arg1'])
-
+                    selected_tool = {"add": add}[tool_call["name"].lower()]
+                    tool_output = selected_tool.run(tool_call["args"])
     return messages_from_dict(user_chat["messages"])
 
 def clear_chat_history(user_id: str):
-    """Clear the chat history for a user."""
     chat_collection.delete_one({"user_id": user_id})
 
 @app.post("/chat/", response_model=AIResponse)
 async def chat(user_message: UserMessage):
-    user_id = user_message.user_id
-    message = user_message.message
+    try:
+        user_id = user_message.user_id
+        usr_message = user_message.message
 
-    # Initialize user chat history if not exists
-    initialize_chat_history(user_id)
+        initialize_chat_history(user_id)
 
-    # Add user message to chat history
-    human_message = message_to_dict(HumanMessage(content=message))#.to_dict()
-    #human_message = {"type":human_message.type, "content":human_message.content}
-    add_message_to_history(user_id, human_message)
+        # Retrieve from vector DB and append context
+        vector_db_search = retrieve_db(query=usr_message, threshold=0.7)
+        message = usr_message + "\n\n" + vector_db_search
 
-    # Retrieve chat history and reconstruct messages
-    messages = get_chat_history(user_id)
+        # Add user message to history
+        human_message = message_to_dict(HumanMessage(content=message))
+        add_message_to_history(user_id, human_message)
 
-    # Process user message
-    ai_msg = model_1_with_tools.invoke(messages)
-
-    #if ai_response_content:
-    ai_message = message_to_dict(ai_msg)#.to_dict()
-    add_message_to_history(user_id, ai_message)
-
-    if len(ai_msg.tool_calls)!=0:
-        for tool_call in ai_msg.tool_calls:
-            selected_tool = {"add":add}[tool_call["name"].lower()]
-            tool_output = selected_tool.run(tool_call["args"]['__arg1'])
-            tool_message = message_to_dict(ToolMessage(tool_output, tool_call_id=tool_call["id"]))#.to_dict()
-            #tool_message = {"type":tool_message.type, "content":tool_message.content}
-            toolargs = tool_call["args"]['__arg1']
-            toolMessageTest = f'print({toolargs})'
-            add_message_to_history(user_id, tool_message)
-
-        # Generate final response
-        final_messages = get_chat_history(user_id)
-        full_response = model_1_with_tools.invoke(final_messages)
-        ai_response_content = full_response.content
-        ai_message = message_to_dict(full_response)#.to_dict()
-        #ai_message = {"type":ai_message.type, "content":ai_message.content}
+        # Get previous chat
+        messages = get_chat_history(user_id)
+        ai_msg = model_1_with_tools.invoke(messages)
+        ai_message = message_to_dict(ai_msg)
         add_message_to_history(user_id, ai_message)
-        return AIResponse(response=ai_response_content)
-    return AIResponse(response=ai_msg.content)
+
+        if len(ai_msg.tool_calls) != 0:
+            for tool_call in ai_msg.tool_calls:
+                selected_tool = {"add": add}[tool_call["name"].lower()]
+                tool_output = selected_tool.run(tool_call["args"])
+                tool_message = message_to_dict(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+                add_message_to_history(user_id, tool_message)
+
+            final_messages = get_chat_history(user_id)
+            full_response = model_1_with_tools.invoke(final_messages)
+            add_message_to_history(user_id, message_to_dict(full_response))
+            with open("response_log.txt", "a") as log_file:
+                log_file.write(f"{datetime.now(timezone.utc)} - User ID: {user_id}\n")
+                log_file.write(f"Response: {full_response.content}\n\n")
+            return AIResponse(response=full_response.content)
+
+        return AIResponse(response=ai_msg.content)
+
+    except Exception as e:
+        # Log traceback to console or a log file
+        print("Exception in /chat/:", traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal Server Error: {str(e)}"}
+        )
 
 @app.get("/chat_history/{user_id}")
 async def get_user_chat_history(user_id: str):
