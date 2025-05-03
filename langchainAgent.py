@@ -19,16 +19,28 @@ from fastapi.responses import JSONResponse
 import traceback
 
 # Vector store setup
-from langchain_community.vectorstores import FAISS
+# from langchain_community.vectorstores import FAISS
 #from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Qdrant
+from qdrant_client import QdrantClient
 
 
-embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+"""embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vector_store = FAISS.load_local(
     "vector_index",
     embeddings=embedding_model,
     allow_dangerous_deserialization=True  
+)"""
+
+embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+client = QdrantClient(host="localhost", port=6333) 
+
+# Load vector store from Qdrant
+vector_store = Qdrant(
+    client=client,
+    collection_name="document_vectors",
+    embeddings=embedding_model,
 )
 
 def retrieve_db(query: str, threshold: float = 0.0):    #Added similarity threshold to avoid irrelevant context for prompts if not needed
@@ -109,7 +121,7 @@ tools = [add]
 model_1_with_tools = model_1.bind_tools(tools, tool_choice="auto")
 
 SYSTEM_MESSAGE_CONTENT = (
-    "Your are an AI agent responsible for answers user's question regarding legal statues."
+    "Your are an AI agent responsible for answers user's question. You are part of RAG implementation. If the query matches vector store, your prompt will be include prompt and information extracted from vectore store"     #Should be changed to the actual topic
 )
 
 class UserMessage(BaseModel):
@@ -158,7 +170,7 @@ async def chat(user_message: UserMessage):
 
         # Retrieve from vector DB and append context
         vector_db_search = retrieve_db(query=usr_message, threshold=0.7)
-        message = usr_message + "\n\n" + vector_db_search
+        message = f"Prompt: {usr_message} '\n\n' Vector Database Match {vector_db_search}"
 
         # Add user message to history
         human_message = message_to_dict(HumanMessage(content=message))
