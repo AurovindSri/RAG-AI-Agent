@@ -64,6 +64,12 @@ if "user_id" not in st.session_state or st.session_state["user_id"] != user_id:
     st.session_state["user_id"] = user_id
     st.session_state["messages"] = get_chat_history(user_id)
 
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = user_id
+
 # Display chat history (Excluding system and tool messages)
 st.subheader("Chat History")
 for msg in st.session_state["messages"]:

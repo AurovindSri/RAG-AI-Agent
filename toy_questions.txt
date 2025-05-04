@@ -1,0 +1,18 @@
+1. How much funding is requested for Orion capsules under “Moon to Mars Transportation Systems”? NASA
+2. In what fiscal year does the fact sheet schedule the launch of Artemis IV? NASA
+3. What dollar amount is set aside for spacesustainability efforts to mitigate orbital debris? NASA
+4. How much does NASA request for the Office of STEM Engagement to broaden student participation? NASA
+5. What is the general annual credit limit a taxpayer can claim under the Energy Efficient Home Improvement Credit (§ 25C)? IRS
+6. Name two types of residential energy property expenditures that face a $600 per item cap. IRS
+7. What is the specific dollar cap for exterior windows and skylights under § 25C? IRS
+8. Which U.S. statute is cited as providing liability protection for cyberthreat information shared with CISA? CISA
+9. What Traffic Light Protocol (TLP) marking labels the entire document? CISA
+10. List two of the “Enhanced Coordination” defensive actions CISA may take after analyzing shared AIrelated threat data. CISA
+11. Give two features that make the digital euro usable when the payer is offline. European Central Bank
+12. According to the roadmap slides, what are the start and end dates of the project’s “Preparation phase”? European Central Bank
+13. As of 10 January 2025, how much total investment have the 31 Tech Hubs attracted? U.S. Economic Development Administration
+14. What is the range—in millions—of implementation funding awarded to each of the six new Tech Hubs? U.S. Economic Development Administration
+15. Which Tech Hub focuses on microfluidics technology, and which state does it serve? U.S. Economic Development Administration
+16. Which earlier OMB memorandum does M2418 explicitly build upon for AI risk management practices? The White House
+17. Name the two AI system categories that receive extra acquisitionguidance attention in M2418. The White House
+18. What three overarching priorities must agencies pursue when accelerating federal AI adoption under M2521? The White House

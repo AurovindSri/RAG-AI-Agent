@@ -43,6 +43,10 @@ vector_store = Qdrant(
     embeddings=embedding_model,
 )
 
+def track_history(user_id: str) -> bool:
+    return user_id != "benchmark_user"
+
+
 def retrieve_db(query: str, threshold: float = 0.0):    #Added similarity threshold to avoid irrelevant context for prompts if not needed
     """Retrieve information related to a query from vector Database."""
     if not vector_store:
@@ -167,84 +171,84 @@ async def chat(user_message: UserMessage):
         user_id = user_message.user_id
         usr_message = user_message.message
 
-        initialize_chat_history(user_id)
-
-        # Retrieve from vector DB and append context
         vector_db_search = retrieve_db(query=usr_message, threshold=0.7)
-        # message = f"User Prompt: {usr_message} Vector Database Match: no match. Give your own answer "  #'\n\n' Vector Database Match {vector_db_search}"
         message = f"User Prompt: {usr_message} '\n\n' Vector Database Match {vector_db_search}"
+        human_message = HumanMessage(content=message)
 
-        # Add user message to history
-        human_message = message_to_dict(HumanMessage(content=message))
-        add_message_to_history(user_id, human_message)
+        if track_history(user_id):
+            initialize_chat_history(user_id)
+            add_message_to_history(user_id, message_to_dict(human_message))
 
-        # Get previous chat
-        messages = get_chat_history(user_id)
+        messages = get_chat_history(user_id) if track_history(user_id) else [human_message]
         ai_msg = model_1_with_tools.invoke(messages)
-        ai_message = message_to_dict(ai_msg)
-        add_message_to_history(user_id, ai_message)
 
-        if len(ai_msg.tool_calls) != 0:
+        if track_history(user_id):
+            add_message_to_history(user_id, message_to_dict(ai_msg))
+
+        # Handle tool calls if any
+        if ai_msg.tool_calls:
             for tool_call in ai_msg.tool_calls:
-                selected_tool = {"add": add}[tool_call["name"].lower()]
-                tool_output = selected_tool.run(tool_call["args"])
-                tool_message = message_to_dict(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-                add_message_to_history(user_id, tool_message)
+                tool_name = tool_call["name"].lower()
+                if tool_name == "add":
+                    tool_result = add.run(tool_call["args"])
+                    tool_msg = ToolMessage(tool_result, tool_call_id=tool_call["id"])
+                    if track_history(user_id):
+                        add_message_to_history(user_id, message_to_dict(tool_msg))
 
-            final_messages = get_chat_history(user_id)
-            full_response = model_1_with_tools.invoke(final_messages)
-            add_message_to_history(user_id, message_to_dict(full_response))
-            with open("response_log.txt", "a") as log_file:
-                log_file.write(f"{datetime.now(timezone.utc)} - User ID: {user_id}\n")
-                log_file.write(f"Response: {full_response.content}\n\n")
-            return AIResponse(response=full_response.content)
+            final_messages = get_chat_history(user_id) if track_history(user_id) else messages + [tool_msg]
+            final_response = model_1_with_tools.invoke(final_messages)
+
+            if track_history(user_id):
+                add_message_to_history(user_id, message_to_dict(final_response))
+
+            return AIResponse(response=final_response.content)
 
         return AIResponse(response=ai_msg.content)
 
     except Exception as e:
-        # Log traceback to console or a log file
-        print("Exception in /chat/:", traceback.format_exc())
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Internal Server Error: {str(e)}"}
-        )
-    
+        print("Exception in /chat_rag/:", traceback.format_exc())
+        return JSONResponse(status_code=500, content={"detail": f"Internal Server Error: {str(e)}"})
+  
 @app.post("/chat_direct/", response_model=AIResponse)
 async def chat_direct(user_message: UserMessage):
     try:
         user_id = user_message.user_id
         usr_message = user_message.message
+        human_message = HumanMessage(content=usr_message)
 
-        initialize_chat_history(user_id)
+        if track_history(user_id):
+            initialize_chat_history(user_id)
+            add_message_to_history(user_id, message_to_dict(human_message))
 
-        human_message = message_to_dict(HumanMessage(content=usr_message))
-        add_message_to_history(user_id, human_message)
-
-        messages = get_chat_history(user_id)
+        messages = get_chat_history(user_id) if track_history(user_id) else [human_message]
         ai_msg = model_1_with_tools.invoke(messages)
-        ai_message = message_to_dict(ai_msg)
-        add_message_to_history(user_id, ai_message)
 
-        if len(ai_msg.tool_calls) != 0:
+        if track_history(user_id):
+            add_message_to_history(user_id, message_to_dict(ai_msg))
+
+        # Handle tool calls if any
+        if ai_msg.tool_calls:
             for tool_call in ai_msg.tool_calls:
-                selected_tool = {"add": add}[tool_call["name"].lower()]
-                tool_output = selected_tool.run(tool_call["args"])
-                tool_message = message_to_dict(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-                add_message_to_history(user_id, tool_message)
+                tool_name = tool_call["name"].lower()
+                if tool_name == "add":
+                    tool_result = add.run(tool_call["args"])
+                    tool_msg = ToolMessage(tool_result, tool_call_id=tool_call["id"])
+                    if track_history(user_id):
+                        add_message_to_history(user_id, message_to_dict(tool_msg))
 
-            final_messages = get_chat_history(user_id)
-            full_response = model_1_with_tools.invoke(final_messages)
-            add_message_to_history(user_id, message_to_dict(full_response))
-            return AIResponse(response=full_response.content)
+            final_messages = get_chat_history(user_id) if track_history(user_id) else messages + [tool_msg]
+            final_response = model_1_with_tools.invoke(final_messages)
+
+            if track_history(user_id):
+                add_message_to_history(user_id, message_to_dict(final_response))
+
+            return AIResponse(response=final_response.content)
 
         return AIResponse(response=ai_msg.content)
 
     except Exception as e:
         print("Exception in /chat_direct/:", traceback.format_exc())
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Internal Server Error: {str(e)}"}
-        )
+        return JSONResponse(status_code=500, content={"detail": f"Internal Server Error: {str(e)}"})
 
 
 @app.get("/chat_history/{user_id}")
