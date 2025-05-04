@@ -7,10 +7,20 @@ CHAT_API_URL = "http://localhost:8080/chat/"
 CHAT_HISTORY_URL = "http://localhost:8080/chat_history/"
 CLEAR_HISTORY_URL = "http://localhost:8080/clear_history/"
 
+#Selection of RAG/Non-RAG mode
+rag_mode = st.sidebar.radio(
+    "Choose mode:",
+    ["RAG", "RAG-Free"],
+    index=0
+)
+
 # Helper functions
 def send_message(user_id, message):
     """Send a message to the chatbot."""
-    response = requests.post(CHAT_API_URL, json={"user_id": user_id, "message": message})
+    # response = requests.post(CHAT_API_URL, json={"user_id": user_id, "message": message})
+    endpoint = "chat_rag" if rag_mode == "RAG" else "chat_direct"
+    response = requests.post(f"http://localhost:8080/{endpoint}/", json={"user_id": user_id, "message": message})
+
     if response.status_code == 200:
         try:
             return response.json()["response"]
@@ -63,6 +73,7 @@ for msg in st.session_state["messages"]:
     elif msg["type"] == "ai" and msg['content'].strip():
         # Only display AI response if it is not empty and apply green color and increase font size for label and content
         st.markdown(f"<p><strong style='color: green; font-size: 18px;'>Bot:</strong> <span style='font-size: 16px;'>{msg['content']}</span></p>", unsafe_allow_html=True)
+
 
 # Form for user message input with automatic send on Enter key
 with st.form(key="chat_form", clear_on_submit=True):

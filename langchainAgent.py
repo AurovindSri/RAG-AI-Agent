@@ -39,7 +39,7 @@ client = QdrantClient(host="localhost", port=6333)
 # Load vector store from Qdrant
 vector_store = Qdrant(
     client=client,
-    collection_name="document_vectors",
+    collection_name="test_collection",
     embeddings=embedding_model,
 )
 
@@ -50,7 +50,7 @@ def retrieve_db(query: str, threshold: float = 0.0):    #Added similarity thresh
     
     # Get documents with similarity scores
     #results = vector_store.similarity_search_with_score(query, k=2)                    #Good enough but might give redundant context
-    results = vector_store.max_marginal_relevance_search(query, k=5, lambda_mult=threshold)   #Avoids giving redundant context & gives more context
+    results = vector_store.max_marginal_relevance_search(query, k=3, lambda_mult=threshold)   #Avoids giving redundant context & gives more context
     
     # Filter based on threshold
     filtered_docs = results
@@ -121,8 +121,9 @@ tools = [add]
 model_1_with_tools = model_1.bind_tools(tools, tool_choice="auto")
 
 SYSTEM_MESSAGE_CONTENT = (
-    "Your are an AI agent responsible for answers user's question. You are part of RAG implementation. If the query matches vector store, your prompt will be include prompt and information extracted from vectore store"     #Should be changed to the actual topic
-)
+    "Your are an AI agent responsible for answers user's question. You are part of RAG implementation. "
+    "If the query matches vector store, your prompt will be include prompt and 3 blocks of information extracted from vectore store."
+    )
 
 class UserMessage(BaseModel):
     user_id: str
@@ -160,7 +161,7 @@ def get_chat_history(user_id: str) -> List[dict]:
 def clear_chat_history(user_id: str):
     chat_collection.delete_one({"user_id": user_id})
 
-@app.post("/chat/", response_model=AIResponse)
+@app.post("/chat_rag/", response_model=AIResponse)
 async def chat(user_message: UserMessage):
     try:
         user_id = user_message.user_id
@@ -170,7 +171,8 @@ async def chat(user_message: UserMessage):
 
         # Retrieve from vector DB and append context
         vector_db_search = retrieve_db(query=usr_message, threshold=0.7)
-        message = f"Prompt: {usr_message} '\n\n' Vector Database Match {vector_db_search}"
+        # message = f"User Prompt: {usr_message} Vector Database Match: no match. Give your own answer "  #'\n\n' Vector Database Match {vector_db_search}"
+        message = f"User Prompt: {usr_message} '\n\n' Vector Database Match {vector_db_search}"
 
         # Add user message to history
         human_message = message_to_dict(HumanMessage(content=message))
@@ -206,6 +208,44 @@ async def chat(user_message: UserMessage):
             status_code=500,
             content={"detail": f"Internal Server Error: {str(e)}"}
         )
+    
+@app.post("/chat_direct/", response_model=AIResponse)
+async def chat_direct(user_message: UserMessage):
+    try:
+        user_id = user_message.user_id
+        usr_message = user_message.message
+
+        initialize_chat_history(user_id)
+
+        human_message = message_to_dict(HumanMessage(content=usr_message))
+        add_message_to_history(user_id, human_message)
+
+        messages = get_chat_history(user_id)
+        ai_msg = model_1_with_tools.invoke(messages)
+        ai_message = message_to_dict(ai_msg)
+        add_message_to_history(user_id, ai_message)
+
+        if len(ai_msg.tool_calls) != 0:
+            for tool_call in ai_msg.tool_calls:
+                selected_tool = {"add": add}[tool_call["name"].lower()]
+                tool_output = selected_tool.run(tool_call["args"])
+                tool_message = message_to_dict(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+                add_message_to_history(user_id, tool_message)
+
+            final_messages = get_chat_history(user_id)
+            full_response = model_1_with_tools.invoke(final_messages)
+            add_message_to_history(user_id, message_to_dict(full_response))
+            return AIResponse(response=full_response.content)
+
+        return AIResponse(response=ai_msg.content)
+
+    except Exception as e:
+        print("Exception in /chat_direct/:", traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal Server Error: {str(e)}"}
+        )
+
 
 @app.get("/chat_history/{user_id}")
 async def get_user_chat_history(user_id: str):
