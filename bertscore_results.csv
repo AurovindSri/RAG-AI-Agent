@@ -1,0 +1,56 @@
+qid,rag_answer,baseline_answer,rag_bertscore,baseline_bertscore,rag_grade_0‑10,baseline_grade_0‑10
+Q1,"The funding requested for Orion capsules under “Moon to Mars Transportation Systems” is $1.0 billion, as part of the $4.2 billion allocated to support lunar missions.","NASA has requested $872 million specifically for Orion capsules under ""Moon to Mars Transportation Systems.""",0.7504509,0.66662234,7.5,6.67
+Q2,The Artemis IV mission is scheduled to launch in the fiscal year 2028 according to the fact sheet.,The fact sheet schedules the launch of Artemis IV in fiscal year 2028.,0.6766049,0.6584531,6.77,6.58
+Q3,NASA has set aside $41.2 million for space sustainability to better understand and mitigate the hazard of orbital debris.,NASA has set aside $12 million for space sustainability efforts to address the issue of orbital debris.,0.70259523,0.6586624,7.03,6.59
+Q4,"NASA requests $143.5 million for the Office of STEM Engagement to broaden student participation in Science, Technology, Engineering, and Mathematics (STEM).","In the Fiscal Year 2024 budget request, NASA requested $157.8 million for the Office of STEM Engagement to broaden student participation.",0.65256655,0.6463218,6.53,6.46
+Q5,"The general annual credit limit a taxpayer can claim under the Energy Efficient Home Improvement Credit (§ 25C) was a lifetime credit limit of $500 through Dec. 31, 2022. This limit was applicable to the taxpayer rather than per property or installation. It is important to review the current regulations and amendments as these limits and rules can be subject to change.","The general annual credit limit for the Energy Efficient Home Improvement Credit under § 25C is $1,200 per taxpayer. Additionally, it allows for up to a $3,200 credit for qualified heat pumps and biomass stoves and boilers.",0.592068,0.6730623,5.92,6.73
+Q6,"Two types of residential energy property expenditures that face a $600 per item cap are:
+
+1. Central air conditioners.
+2. Natural gas, propane, or oil water heaters.","Two types of residential energy property expenditures that face a $600 per item cap, as defined by IRS guidelines, are:
+
+1. Electric panel upgrades for certain properties.
+2. Energy-efficient windows and doors.
+
+Please note that the IRS guidelines may be subject to changes, and it's always a good idea to refer to their official resources or consult a tax professional for the most accurate and up-to-date information.",0.6743418,0.50328135,6.74,5.03
+Q7,The specific dollar cap for exterior windows and skylights under § 25C is $600.,"Under the IRS code § 25C, the specific dollar cap for exterior windows and skylights is limited to $600. This cap is part of the total $1,200 annual limit for the section, which includes various other qualifying energy-efficient improvements.",0.7325352,0.63735944,7.33,6.37
+Q8,The U.S. statute that provides liability protection for cyber threat information shared with the Cybersecurity and Infrastructure Security Agency (CISA) is cited as CISA 2015.,"The U.S. statute that provides liability protection for cyber threat information shared with the Cybersecurity and Infrastructure Security Agency (CISA) is the Cybersecurity Information Sharing Act of 2015 (CISA), which is part of the broader Cybersecurity Act of 2015. This legislation encourages the sharing of cybersecurity threat information between the private sector and the government by providing liability protection for entities that share information in accordance with its guidelines.",0.60230786,0.57212317,6.02,5.72
+Q9,"The Traffic Light Protocol (TLP) marking labels the entire document as ""For Official Use Only (FOUO)"" according to the metadata in the sources provided.",The Traffic Light Protocol (TLP) marking that labels the entire document is typically TLP:RED. TLP:RED means that the information can only be shared within specific trusted individuals and cannot be publicly disclosed or shared outside of that small group.,0.45842975,0.43402106,4.58,4.34
+Q10,"Two of the “Enhanced Coordination” defensive actions CISA may take after analyzing shared AI-related threat data are:
+1. Sharing information for detection and prevention purposes.
+2. Aggregating, validating, analyzing, anonymizing, and enriching the shared data to determine appropriate defensive actions.","Two of the ""Enhanced Coordination"" defensive actions that the Cybersecurity and Infrastructure Security Agency (CISA) may take after analyzing shared AI-related threat data include:
+
+1. Facilitating collaborative efforts and information-sharing between public and private sector organizations to collectively identify, respond to, and mitigate threats.
+
+2. Coordinating with other government agencies, international partners, and industry stakeholders to ensure a unified and effective approach to enhancing AI security and resilience.",0.6396214,0.59947115,6.4,5.99
+Q11,"1. Digital euro payments can be made via a physical card, allowing users to fund and defund using cash, which facilitates offline transactions.
+2. The offline functionality ensures transactions can occur in locations with limited connectivity.","Two features that make the digital euro usable when the payer is offline include:
+
+1. **Offline Functionality**: The digital euro is designed to work without an internet connection, allowing transactions to be processed even when the payer is offline. This ensures that payments can be made in areas with weak connectivity or during network outages.
+
+2. **Secure and Direct Transactions**: Offline payments with the digital euro are securely processed between devices, with direct communication ensuring that the payment is completed without the need for an online intermediary. This helps maintain the integrity and security of the transaction even when offline.",0.45371154,0.4600556,4.54,4.6
+Q12,"The project's ""Preparation phase"" is scheduled from November 2023 to October 2025 according to the roadmap slides.","The ""Preparation phase"" of the project, as per the roadmap slides from the European Central Bank, began in July 2021 and ended in September 2023.",0.65231746,0.58172464,6.52,5.82
+Q13,"As of January 10, 2025, the 31 Tech Hubs have secured over $6 billion in investments and other commitments.","By January 10, 2025, the Economic Development Administration will have invested $611.5 million. These resources are aimed at supporting various initiatives in different regions. These regions include areas covering a population of over 104 million people.",0.7856173,0.57679737,7.86,5.77
+Q14,The implementation funding awarded to each of the six new Tech Hubs ranges between approximately $22 million and $48 million.,The implementation funding awarded to each of the six new Tech Hubs ranges from $30 million to $75 million.,0.7095762,0.6958405,7.1,6.96
+Q15,"The Corvallis Microfluidics Tech Hub (CorMic), led by Oregon State University, focuses on microfluidics technology. It serves the state of Oregon.",The Tech Hub focusing on microfluidics technology is the Western New York Microfluidics Tech Hub. It serves the state of New York.,0.8288971,0.6489219,8.29,6.49
+Q16,"The OMB memorandum M-24-18 explicitly builds upon the earlier memorandum M-24-10, which is titled ""Advancing Governance, Innovation, and Risk Management for Agency Use of Artificial Intelligence.""","According to the details about the OMB memorandum M-24-18 related to the implementation of artificial intelligence, M-24-18 explicitly builds upon earlier practices and guidance presented in M-21-06.",0.8436705,0.6765626,8.44,6.77
+Q17,"The two AI system categories that receive extra acquisition guidance in Memorandum M-2418 are ""generative AI"" and AI systems involving ""open-ended inputs"".","The two AI system categories that receive extra acquisition guidance attention in M-24-18 are:
+
+1. Mission-Critical AI Systems: These are AI systems that are essential for achieving an agency's mission and objectives. They require careful planning and oversight to ensure they are aligned with agency goals and can reliably perform their intended functions.
+
+2. High-Risk AI Systems: These are AI systems that carry significant risks, such as those impacting safety, security, privacy, or other sensitive areas. They necessitate heightened scrutiny and risk management to mitigate potential adverse consequences.",0.604479,0.47771493,6.04,4.78
+Q18,"The three overarching priorities that agencies must pursue when accelerating federal AI adoption under M-25-21 are:
+
+1. **Embracing AI Innovation**: Agencies are encouraged to adopt AI in order to become more agile, cost-effective, and efficient. The focus is on leveraging AI to deliver meaningful improvements to public services and enhancing America's leadership in AI innovation.
+
+2. **Maintaining Privacy and Civil Protections**: There is an emphasis on maintaining strong protections for Americans’ privacy, civil rights, and civil liberties even as AI technologies are adopted.
+
+3. **Accountability and Efficiency in AI Use**: The accountability for AI should align with the existing processes for using government IT, avoiding unnecessary bureaucratic delays, and maximizing the use of American-developed AI solutions when seeking new innovations.","Under Memorandum M-21-06, ""Guidance for Regulation of Artificial Intelligence Applications,"" issued by the White House Office of Management and Budget (OMB), federal agencies are encouraged to pursue three overarching priorities when accelerating federal AI adoption:
+
+1. **Delivering Better Outcomes Through AI**: Agencies should focus on harnessing AI to improve outcomes in various missions, enhancing efficiency and effectiveness in operations. 
+
+2. **Cultivating a Strong Technical Foundation**: It is crucial to build and maintain a robust technical infrastructure that supports the safe and effective use of AI technologies. This includes investing in necessary hardware, software, and human resources with appropriate skills and knowledge.
+
+3. **Risk Management and Safety**: Agencies should prioritize the development and implementation of safeguards to manage risks associated with AI, ensuring that AI applications are used responsibly and align with ethical standards and human rights. 
+
+These priorities aim at ensuring that AI adoption in the federal government is done in a way that maximizes benefits while minimizing potential risks and drawbacks.",0.55129164,0.5254104,5.51,5.25
